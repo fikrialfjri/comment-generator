@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TikTok-Style Comment Generator</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --bg: #0b0b0c; /* dark ui */
+        --panel: #121215;
+        --border: #29292e;
+        --muted: #9aa0a6;
+        --text: #e9eaee;
+        --accent: #eeeff2;
+        --heart: #e63946;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: linear-gradient(180deg, var(--bg), #0f0f12);
+        color: var(--text);
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 380px 1fr;
+        gap: 24px;
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 24px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+      }
+
+      .form {
+        padding: 18px;
+      }
+
+      label {
+        display: block;
+        margin: 10px 2px 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      input[type="text"],
+      input[type="number"],
+      textarea {
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 14px;
+        color: var(--text);
+        background: #0e0e11;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+      }
+
+      textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 18px 18px;
+        border-top: 1px solid var(--border);
+      }
+
+      button {
+        appearance: none;
+        padding: 10px 14px;
+        font-weight: 600;
+        color: var(--text);
+        background: #18181c;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+      }
+
+      button.primary {
+        background: #2b2b31;
+      }
+
+      button.accent {
+        background: #1f1f24;
+      }
+
+      .preview-wrap {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 18px;
+      }
+
+      /* COMMENT CANVAS */
+      .canvas {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        width: 500px;
+        padding: 8px 12px;
+        color: #111;
+        background: #fff;
+        border: 1px solid #eaecef;
+      }
+
+      .dark .canvas {
+        /* we export light comment by default */
+        background: #ffffff;
+        color: #111;
+      }
+
+      .avatar {
+        flex: 0 0 48px;
+        width: 48px;
+        height: 48px;
+        margin-top: 2px;
+        object-fit: cover;
+        border-radius: 50%;
+        background: #ddd;
+      }
+
+      .name {
+        font-weight: 600;
+        color: #6a7282;
+      }
+
+      .text {
+        margin: 4px 0 10px;
+        font-size: 16px;
+        line-height: 1.5;
+        color: inherit;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .actions-right,
+      .actions-left {
+        display: flex;
+        align-items: center;
+      }
+
+      .actions-left {
+        gap: 18px;
+      }
+
+      .actions-right {
+        gap: 12px;
+      }
+
+      .date {
+        font-size: 14px;
+        font-weight: 400;
+        color: #0000007a;
+      }
+
+      .like {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 400;
+        color: #0000007a;
+        fill: #0000009a;
+      }
+
+      .dislike {
+        display: flex;
+        align-items: center;
+        transform: scaleX(-1);
+        fill: #0000009a;
+      }
+
+      .reply {
+        font-weight: 500;
+        color: #0000008a;
+      }
+
+      .muted {
+        color: #9ca3af;
+      }
+
+      /* Export area centered */
+      .canvas-wrap {
+        display: flex;
+        justify-content: center;
+      }
+
+      .content {
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body class="dark">
+    <div class="app">
+      <!-- LEFT: Controls -->
+      <div class="card">
+        <form class="form" id="form">
+          <label>Avatar <span class="hint">(opsional)</span></label>
+          <input type="text" id="avatarInput" placeholder="Masukkan URL gambar" />
+
+          <div class="row">
+            <div>
+              <label>Username</label>
+              <input type="text" id="username" placeholder="Masukkan username" value="" />
+            </div>
+            <div>
+              <label>Tanggal (MM-DD)</label>
+              <input type="text" id="date" placeholder="MM-DD" value="" />
+            </div>
+          </div>
+
+          <label>Komentar</label>
+          <textarea placeholder="Masukkan komentar" id="comment"></textarea>
+
+          <div class="row">
+            <div>
+              <label>Likes</label>
+              <input type="text" id="likes" placeholder="Masukkan likes" value="" />
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Preview / Export -->
+      <div class="card preview-wrap">
+        <div class="canvas-wrap">
+          <div id="capture" class="canvas">
+            <img id="avatar" class="avatar" src="https://i.pravatar.cc/150?img=3" alt="avatar" />
+            <div class="content">
+              <span class="name" id="nameOut"></span>
+              <div class="text" id="commentOut"></div>
+
+              <div class="actions">
+                <div class="actions-left">
+                  <span class="date" id="dateOut"></span>
+                  <div class="reply">Reply</div>
+                </div>
+
+                <div class="actions-right">
+                  <div class="like">
+                    <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+                      <path
+                        d="M442.9 144C415.6 144 389.9 157.1 373.9 179.2L339.5 226.8C335 233 327.8 236.7 320.1 236.7C312.4 236.7 305.2 233 300.7 226.8L266.3 179.2C250.3 157.1 224.6 144 197.3 144C150.3 144 112.2 182.1 112.2 229.1C112.2 279 144.2 327.5 180.3 371.4C221.4 421.4 271.7 465.4 306.2 491.7C309.4 494.1 314.1 495.9 320.2 495.9C326.3 495.9 331 494.1 334.2 491.7C368.7 465.4 419 421.3 460.1 371.4C496.3 327.5 528.2 279 528.2 229.1C528.2 182.1 490.1 144 443.1 144zM335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1C576 297.7 533.1 358 496.9 401.9C452.8 455.5 399.6 502 363.1 529.8C350.8 539.2 335.6 543.9 320 543.9C304.4 543.9 289.2 539.2 276.9 529.8C240.4 502 187.2 455.5 143.1 402C106.9 358.1 64 297.7 64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1L320 171.8L335 151.1z"
+                      />
+                    </svg>
+                    <span id="likesOut"></span>
+                  </div>
+
+                  <div class="dislike">
+                    <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+                      <path
+                        d="M424 96L431.4 96.4C466.4 100 493.9 128.6 495.8 164.1C513.6 175.9 525.9 195.5 527.8 218L528 224C528 229.7 527.3 235.2 526 240.5C536.2 252 542.8 266.8 543.8 283.2L544 288C544 301.2 540.4 313.4 534.2 324C539.1 332.4 542.4 341.9 543.5 352L543.9 360C543.9 397.3 515.6 427.9 479.3 431.6L471.9 432L362.2 432L376.3 462L379.4 469.6C391.9 505.3 377.6 545.1 345.2 564.6L338 568.5C300.5 586.1 256.3 572.1 235.4 537.3L234.8 536.4L232.1 531.4L231.5 530.2L201.4 466.2C192 484 173.4 496.1 151.9 496.1L119.9 496.1C89 496.1 63.9 471 63.9 440.1L64 216C64 185.1 89.1 160 120 160L152 160C164.4 160 175.9 164.1 185.2 171C198.4 149.6 217.2 131.6 240.2 119.4L252.4 112.9L253.1 112.6L259.7 109.4L260.4 109.1L267.5 106.1C284.2 99.5 302 96.2 320.1 96.2L424 96zM319.9 144C307.9 144 296 146.3 284.8 150.6L280.1 152.6L274.8 155.2L274.8 155.2L262.6 161.7C233.4 177.2 214.3 206.6 211.9 239.3L211.7 247.3L211.7 360.2L211.8 364.3C212.3 372.5 214.3 380.5 217.8 388L274.6 508.9L276.7 512.7C285.1 526.4 302.7 531.8 317.5 524.9L320.4 523.3C333.4 515.5 339.1 499.6 334.1 485.3L332.9 482.3L302.7 418.1C299.2 410.7 299.8 402 304.2 395C308.6 388 316.2 383.9 324.4 383.9L471.9 383.9L474.3 383.8C485.6 382.7 494.6 373.7 495.7 362.4L495.8 359.9C495.8 352.8 492.7 346.4 487.6 341.9C482.4 337.3 479.4 330.8 479.4 323.9C479.4 317 482.4 310.5 487.6 305.9C492 302 495 296.6 495.6 290.6L495.8 287.9C495.8 279.5 491.4 272 484.6 267.7C473.9 260.8 470.4 246.8 476.6 235.7C478.1 233.1 479.1 230.1 479.5 227.1L479.7 223.9C479.7 213.3 472.8 204.3 463.1 201.1C451.4 197.3 444.4 185.2 447.1 173.1C447.3 172.2 447.4 171.3 447.5 170.5L447.7 167.9C447.7 155.5 438.2 145.3 426.1 144.1L424 144L319.9 144zM120 208C115.6 208 112 211.6 112 216L112 440C112 444.4 115.6 448 120 448L152 448C156.4 448 160 444.4 160 440L160 216C160 211.6 156.4 208 152 208L120 208z"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="primary" type="button" id="download">Download</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- html2canvas for export -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+      const $ = (q) => document.querySelector(q);
+
+      const username = $("#username");
+      const date = $("#date");
+      const comment = $("#comment");
+      const likes = $("#likes");
+
+      const nameOut = $("#nameOut");
+      const dateOut = $("#dateOut");
+      const commentOut = $("#commentOut");
+      const likesOut = $("#likesOut");
+
+      function sync() {
+        nameOut.textContent = username.value.trim() || "username";
+        dateOut.textContent = date.value.trim() || "MM-DD";
+        commentOut.textContent = comment.value.trim() || "Comment comment comment comment";
+        likesOut.textContent = likes.value || "666";
+      }
+
+      [username, date, comment, likes].forEach((el) => {
+        el.addEventListener("input", sync);
+      });
+      sync();
+
+      // Avatar upload
+      const avatarInput = document.getElementById("avatarInput");
+      const avatar = document.getElementById("avatar");
+
+      avatarInput.addEventListener("input", (e) => {
+        const url = e.target.value.trim();
+        if (url) avatar.src = url;
+      });
+
+      // Download
+      document.getElementById("download").addEventListener("click", async () => {
+        const node = document.getElementById("capture");
+        const scale = 2; // crisp PNG
+        const canvas = await html2canvas(node, {
+          backgroundColor: null,
+          scale,
+          useCORS: true,
+        });
+
+        const link = document.createElement("a");
+        link.download = `comment-${Date.now()}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      });
+    </script>
+  </body>
+</html>
