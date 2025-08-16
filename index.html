@@ -221,6 +221,38 @@
       .content {
         flex: 1;
       }
+
+      /* segmented button toggle */
+      .btn-toggle {
+        display: inline-flex;
+        background: #18181c;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .btn-toggle__btn {
+        appearance: none;
+        border: 0;
+        padding: 10px 12px;
+        background: transparent;
+        color: var(--text);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-toggle__btn + .btn-toggle__btn {
+        border-left: 1px solid var(--border);
+      }
+      .btn-toggle__btn.is-active {
+        background: #2b2b31;
+      }
+      .btn-toggle__btn:focus-visible {
+        outline: 2px solid #8ab4f8;
+        outline-offset: 2px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
     </style>
   </head>
 
@@ -251,6 +283,14 @@
               <label>Likes</label>
               <input type="text" id="likes" placeholder="Masukkan likes" value="" />
             </div>
+            <div>
+              <label>Tampilkan Verified Badge</label>
+              <div class="btn-toggle" id="verifiedButtons" role="group" aria-label="Verified toggle">
+                <button type="button" class="btn-toggle__btn is-active" data-value="off" aria-pressed="true">Sembunyikan</button>
+                <button type="button" class="btn-toggle__btn" data-value="on" aria-pressed="false">Tampilkan</button>
+              </div>
+              <input type="hidden" id="verifiedToggle" value="off" />
+            </div>
           </div>
         </form>
       </div>
@@ -261,7 +301,35 @@
           <div id="capture" class="canvas">
             <img id="avatar" class="avatar" src="https://i.pravatar.cc/150?img=3" alt="avatar" />
             <div class="content">
-              <span class="name" id="nameOut"></span>
+              <div>
+                <span class="name" id="nameOut"></span>
+                <!-- verified badge -->
+                <svg
+                  id="verifiedBadge"
+                  class="hidden"
+                  color="inherit"
+                  font-size="12"
+                  viewBox="0 0 48 48"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  aria-label="Verified"
+                >
+                  <g clip-path="url(#Icon_Color-Verified_Badge_svg__a)">
+                    <path d="M0 24a24 24 0 1 1 48 0 24 24 0 0 1-48 0Z" fill="#20D5EC"></path>
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M37.12 15.88a3 3 0 0 1 0 4.24l-13.5 13.5a3 3 0 0 1-4.24 0l-8.5-8.5a3 3 0 1 1 4.24-4.24l6.38 6.38 11.38-11.38a3 3 0 0 1 4.24 0Z"
+                      fill="#fff"
+                    ></path>
+                  </g>
+                  <defs>
+                    <clipPath id="Icon_Color-Verified_Badge_svg__a"><path fill="#fff" d="M0 0h48v48H0z"></path></clipPath>
+                  </defs>
+                </svg>
+              </div>
               <div class="text" id="commentOut"></div>
 
               <div class="actions">
@@ -314,16 +382,44 @@
       const commentOut = $("#commentOut");
       const likesOut = $("#likesOut");
 
+      // FIX: dapatkan elemen badge yang di-toggle
+      const verifiedBadge = $("#verifiedBadge");
+
+      // segmented toggle state
+      const verifiedHidden = $("#verifiedToggle");
+      const verifiedButtons = $("#verifiedButtons");
+
+      function setVerified(val) {
+        verifiedHidden.value = val;
+        verifiedButtons.querySelectorAll(".btn-toggle__btn").forEach((btn) => {
+          const active = btn.dataset.value === val;
+          btn.classList.toggle("is-active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        sync();
+      }
+
+      verifiedButtons.addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-toggle__btn");
+        if (!btn) return;
+        setVerified(btn.dataset.value);
+      });
+
       function sync() {
         nameOut.textContent = username.value.trim() || "username";
         dateOut.textContent = date.value.trim() || "MM-DD";
         commentOut.textContent = comment.value.trim() || "Comment comment comment comment";
         likesOut.textContent = likes.value || "666";
+
+        const verifiedOn = verifiedHidden.value === "on";
+        verifiedBadge.classList.toggle("hidden", !verifiedOn);
       }
 
       [username, date, comment, likes].forEach((el) => {
         el.addEventListener("input", sync);
       });
+
+      // inisialisasi tampilan sesuai default hidden input
       sync();
 
       // Avatar upload
