@@ -472,8 +472,35 @@
       const verifiedCheckbox = $("#verifiedCheckbox");
       const creatorLikeContainer = $("#creatorLikeContainer");
       const creatorLikeAvatar = $("#creatorLikeAvatar");
+      const manualPanel = document.getElementById("tab-manual");
       const tabButtons = document.querySelectorAll("[data-tab]");
       const tabPanels = document.querySelectorAll("[data-tab-panel]");
+      let manualPanelHeight = 0;
+      function measureManualPanelHeight() {
+        const wasHidden = manualPanel.hasAttribute("hidden");
+        const previousDisplay = manualPanel.style.display;
+        const isActive = manualPanel.classList.contains("is-active");
+        if (!isActive) {
+          manualPanel.removeAttribute("hidden");
+          manualPanel.style.display = "block";
+        }
+        const measured = manualPanel.scrollHeight;
+        if (!isActive) {
+          manualPanel.style.display = previousDisplay;
+          if (wasHidden) manualPanel.setAttribute("hidden", "");
+        }
+        if (measured > 0) {
+          manualPanelHeight = measured;
+        }
+        return manualPanelHeight || measured;
+      }
+      function updateTabPanelHeight() {
+        const height = measureManualPanelHeight();
+        if (!height) return;
+        tabPanels.forEach((panel) => {
+          panel.style.minHeight = `${height}px`;
+        });
+      }
       tabButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
           const target = btn.dataset.tab;
@@ -491,6 +518,7 @@
               panel.setAttribute("hidden", "");
             }
           });
+          updateTabPanelHeight();
         });
       });
       function sync() {
@@ -508,6 +536,7 @@
           creatorLikeContainer.classList.add("hidden");
           creatorLikeAvatar.removeAttribute("src");
         }
+        updateTabPanelHeight();
       }
       [username, date, comment, likes, creatorLikeInput].forEach((el) => {
         el.addEventListener("input", sync);
@@ -583,6 +612,9 @@
       tiktokHtmlInput.addEventListener("input", (event) => {
         if (event.inputType === "insertFromPaste") return;
         parseTikTokHtml(tiktokHtmlInput.value);
+      });
+      window.addEventListener("resize", () => {
+        updateTabPanelHeight();
       });
     </script>
   </body>
