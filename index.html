@@ -36,11 +36,12 @@
       }
       .app {
         display: grid;
-        grid-template-columns: 500px 1fr;
+        grid-template-columns: 450px 1fr;
         gap: 24px;
-        max-width: 1300px;
-        width: 1300px;
+        max-width: 1200px;
+        width: min(100%, 1200px);
         margin: auto;
+        padding: 0 32px;
       }
       .card {
         background: var(--panel);
@@ -105,13 +106,14 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 18px;
+        padding: 24px;
+        width: 100%;
       }
       .canvas {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        width: 500px;
+        width: min(500px, 100%);
         padding: 8px 12px;
         color: #111;
         background: #fff;
@@ -185,6 +187,7 @@
       .canvas-wrap {
         display: flex;
         justify-content: center;
+        width: 100%;
       }
       .content {
         flex: 1;
@@ -250,6 +253,68 @@
         width: 6px;
         height: 6px;
         fill: #fff;
+      }
+      @media (max-width: 1100px) {
+        .app {
+          grid-template-columns: 420px 1fr;
+          gap: 22px;
+          padding: 0 24px;
+        }
+        .preview-wrap {
+          padding: 20px;
+        }
+      }
+      @media (max-width: 900px) {
+        html,
+        body {
+          height: auto;
+          min-height: 100%;
+        }
+        body {
+          display: block;
+          padding-top: 24px;
+        }
+        .app {
+          grid-template-columns: 1fr;
+          max-width: 720px;
+          width: min(100%, 720px);
+          padding: 0 20px 32px;
+          gap: 20px;
+        }
+        .preview-wrap {
+          order: -1;
+          align-items: stretch;
+        }
+        .canvas-wrap {
+          justify-content: flex-start;
+        }
+        .canvas {
+          width: 100%;
+        }
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 600px) {
+        .app {
+          padding: 0 16px 24px;
+          gap: 18px;
+        }
+        .form {
+          padding: 16px;
+        }
+        .preview-wrap {
+          padding: 16px;
+        }
+        .controls {
+          padding: 12px 16px 16px;
+        }
+        .tab-list {
+          flex-direction: column;
+        }
+        .tab-button {
+          width: 100%;
+        }
       }
       .hidden {
         display: none !important;
@@ -489,12 +554,17 @@
           manualPanel.style.display = previousDisplay;
           if (wasHidden) manualPanel.setAttribute("hidden", "");
         }
-        if (measured > 0) {
-          manualPanelHeight = measured;
-        }
+        if (measured > 0) manualPanelHeight = measured;
         return manualPanelHeight || measured;
       }
       function updateTabPanelHeight() {
+        const isDesktop = window.matchMedia("(min-width: 901px)").matches;
+        if (!isDesktop) {
+          tabPanels.forEach((panel) => {
+            panel.style.minHeight = "";
+          });
+          return;
+        }
         const height = measureManualPanelHeight();
         if (!height) return;
         tabPanels.forEach((panel) => {
@@ -613,9 +683,8 @@
         if (event.inputType === "insertFromPaste") return;
         parseTikTokHtml(tiktokHtmlInput.value);
       });
-      window.addEventListener("resize", () => {
-        updateTabPanelHeight();
-      });
+      window.addEventListener("resize", updateTabPanelHeight);
+      updateTabPanelHeight();
     </script>
   </body>
 </html>
