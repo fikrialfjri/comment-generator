@@ -30,14 +30,17 @@
         font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
         background: linear-gradient(180deg, var(--bg), #0f0f12);
         color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
       .app {
         display: grid;
         grid-template-columns: 500px 1fr;
         gap: 24px;
         max-width: 1300px;
-        margin: 40px auto;
-        padding: 24px;
+        width: 1300px;
+        margin: auto;
       }
       .card {
         background: var(--panel);
@@ -213,6 +216,41 @@
       .verified-checkbox input:checked + .label-content .badge-icon.is-default {
         display: none;
       }
+      .creator-like {
+        display: flex;
+        align-items: center;
+      }
+      .creator-like__avatar {
+        position: relative;
+        width: 20px;
+        height: 20px;
+      }
+      .creator-like__avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 1px solid #fff;
+        object-fit: cover;
+        display: block;
+      }
+      .creator-like__heart {
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fe2c55;
+        border: 1px solid #fff;
+      }
+      .creator-like__heart svg {
+        width: 6px;
+        height: 6px;
+        fill: #fff;
+      }
       .hidden {
         display: none !important;
       }
@@ -276,7 +314,7 @@
               </button>
             </div>
             <div class="tab-panel is-active" id="tab-manual" data-tab-panel="manual" role="tabpanel">
-              <label>Avatar <span class="hint">(opsional)</span></label>
+              <label>Avatar</label>
               <input type="text" id="avatarInput" placeholder="Masukkan URL gambar" />
               <div class="row">
                 <div>
@@ -284,7 +322,7 @@
                   <input type="text" id="username" placeholder="Masukkan username" value="" />
                 </div>
                 <div>
-                  <label>Tanggal (MM-DD)</label>
+                  <label>Tanggal</label>
                   <input type="text" id="date" placeholder="MM-DD" value="" />
                 </div>
               </div>
@@ -292,6 +330,8 @@
               <textarea placeholder="Masukkan komentar" id="comment"></textarea>
               <label>Likes</label>
               <input type="text" id="likes" placeholder="Masukkan likes" value="" />
+              <label>Avatar Like Creator (opsional)</label>
+              <input type="text" id="creatorLikeInput" placeholder="Masukkan URL avatar creator" />
             </div>
             <div class="tab-panel" id="tab-autofill" data-tab-panel="autofill" role="tabpanel" hidden>
               <div class="tiktok-paste">
@@ -377,6 +417,18 @@
                 <div class="actions-left">
                   <span class="date" id="dateOut"></span>
                   <div class="reply">Reply</div>
+                  <div class="creator-like hidden" id="creatorLikeContainer">
+                    <div class="creator-like__avatar">
+                      <img id="creatorLikeAvatar" alt="Creator like avatar" />
+                      <span class="creator-like__heart" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                          <path
+                            d="M12 21.35 10.55 20C5.4 15.36 2 12.27 2 8.5 2 6.02 3.99 4 6.5 4A4.5 4.5 0 0 1 12 6.09 4.5 4.5 0 0 1 17.5 4C20 4 22 6.02 22 8.5c0 3.77-3.4 6.86-8.55 11.5z"
+                          ></path>
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div class="actions-right">
                   <div class="like">
@@ -411,12 +463,15 @@
       const date = $("#date");
       const comment = $("#comment");
       const likes = $("#likes");
+      const creatorLikeInput = $("#creatorLikeInput");
       const nameOut = $("#nameOut");
       const dateOut = $("#dateOut");
       const commentOut = $("#commentOut");
       const likesOut = $("#likesOut");
       const verifiedBadge = $("#verifiedBadge");
       const verifiedCheckbox = $("#verifiedCheckbox");
+      const creatorLikeContainer = $("#creatorLikeContainer");
+      const creatorLikeAvatar = $("#creatorLikeAvatar");
       const tabButtons = document.querySelectorAll("[data-tab]");
       const tabPanels = document.querySelectorAll("[data-tab-panel]");
       tabButtons.forEach((btn) => {
@@ -445,8 +500,16 @@
         likesOut.textContent = likes.value || "666";
         const verifiedOn = verifiedCheckbox.checked;
         verifiedBadge.classList.toggle("hidden", !verifiedOn);
+        const creatorLikeUrl = creatorLikeInput.value.trim();
+        if (creatorLikeUrl) {
+          creatorLikeAvatar.src = creatorLikeUrl;
+          creatorLikeContainer.classList.remove("hidden");
+        } else {
+          creatorLikeContainer.classList.add("hidden");
+          creatorLikeAvatar.removeAttribute("src");
+        }
       }
-      [username, date, comment, likes].forEach((el) => {
+      [username, date, comment, likes, creatorLikeInput].forEach((el) => {
         el.addEventListener("input", sync);
       });
       verifiedCheckbox.addEventListener("change", sync);
@@ -496,6 +559,19 @@
           if (tanggalEl) {
             date.value = tanggalEl.textContent;
           }
+          let creatorLikeSrc = "";
+          const replyEl = dom.querySelector('[data-e2e^="comment-reply"]');
+          if (replyEl) {
+            const replyWrapper = replyEl.parentElement;
+            const sibling = replyWrapper?.nextElementSibling;
+            const img = sibling?.querySelector("img");
+            if (img) creatorLikeSrc = img.src;
+          }
+          if (!creatorLikeSrc) {
+            const fallback = dom.querySelector(".css-7s4swg-5e6d46e3--DivFloaterBoundsWrapper img");
+            if (fallback) creatorLikeSrc = fallback.src;
+          }
+          creatorLikeInput.value = creatorLikeSrc;
           sync();
         } catch (err) {
           alert("Gagal ekstrak HTML!");
